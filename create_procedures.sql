@@ -52,10 +52,10 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."LOG_STACK" AS
 
 	begin
     -- check to see if debugging is turned on
-    if log_stack.debug(pUnit => pUnit, pUser => user) > 0 then
+    if utility.log_stack.debug(pUnit => pUnit, pUser => user) > 0 then
       -- if so, insert a row.
       -- grab the next id for the primary key.
-      select log_stack_seq.nextval into iId from dual;
+      select errors.log_stack_seq.nextval into iId from dual;
 
       insert into utility.app_log values (iId,
         			pUnit,
@@ -79,16 +79,16 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."LOG_STACK" AS
 	procedure end_entry(pLogID number,
 						pEtime timestamp default current_timestamp,
 						pResults in clob default null) is
-  PRAGMA AUTONOMOUS_TRANSACTION;
+	PRAGMA AUTONOMOUS_TRANSACTION;
 	BEGIN
-    -- check to see if we are logging. if pLogId = 0 then logging did not 
-    -- start.
-    if pLogId != 0 then
-		  update utility.app_log set etime = pEtime, results = pResults 
-		  where id = pLogId;
-	    commit;
-    end if;
-	END;
+		-- check to see if we are logging. if pLogId = 0 then logging did not 
+		-- start.
+		if pLogId != 0 then
+			update errors.app_log set etime = pEtime, results = pResults 
+			where id = pLogId;
+			commit;
+		end if;
+	END end_entry;
 
 end;
 /
@@ -192,7 +192,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."ERRORSTACK_PKG" AS
 		pUnit_Line		  	:= sys.utl_call_stack.unit_line(pDepth);
 		pSubProgram		    := sys.utl_call_stack.concatenate_subprogram(utl_call_stack.subprogram(pDepth));
 		BEGIN
-			pError_Number	  		:= sys.utl_call_stack.error_number(pDepth);
+			pError_Number	  	:= sys.utl_call_stack.error_number(pDepth);
 			pError_Msg		  	:= sys.utl_call_stack.error_msg(pDepth);
 			-- This exception is to be expected when there are no errors.
 		EXCEPTION WHEN OTHERS THEN
@@ -225,19 +225,19 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."ERRORSTACK_PKG" AS
 							 pError_Number	    => iError_Number,
 							 pError_Msg	        => sError_Msg);
 			-- get the next sequence number.
-			SELECT utility.error_lines_seq.nextval
+			SELECT errors.error_lines_seq.nextval
 			INTO iLineId
 			FROM dual;
 			-- insert the line into utility.error_lines.
-			INSERT INTO utility.error_lines VALUES (
-					iLineId,		    -- primary key
-					pErrorId,		    -- fk to utility.errors.
-					i,				      -- dynamic_depth
-					sOwner,			    -- pl/sql unit owner
+			INSERT INTO errors.error_lines VALUES (
+					iLineId,		-- primary key
+					pErrorId,		-- fk to utility.errors.
+					i,				-- dynamic_depth
+					sOwner,			-- pl/sql unit owner
 					sSubProgram,  	-- pl/sql unit and sub program 1st value.
 					iError_Number,	-- error number
-					sError_Msg,		  -- error message
-					iUnit_Line		  -- pl/sql line number
+					sError_Msg,		-- error message
+					iUnit_Line		-- pl/sql line number
 					);
 		END LOOP;
 		COMMIT;
@@ -246,14 +246,14 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."ERRORSTACK_PKG" AS
 	-- the main calling procedure for the error stack package.
 	PROCEDURE pMain (pErrorId OUT INTEGER)IS
 	PRAGMA AUTONOMOUS_TRANSACTION;
-	iErrorId 	INTEGER;		-- utility.errors pk.
+	iErrorId 	INTEGER;		-- errors.errors pk.
 	BEGIN
 		-- get the next sequence for errors.
-		SELECT utility.errors_seq.nextval
+		SELECT errors.errors_seq.nextval
 		INTO pErrorId
 		FROM dual;
 		-- create the base error in utility.errors table.
-		INSERT INTO utility.errors VALUES (pErrorId, -- utility.errors pk
+		INSERT INTO errors.errors VALUES (pErrorId, -- utility.errors pk
 							sys_context('userenv', 'session_user'),
 							sys_context('userenv', 'ip_address'),
 							current_timestamp
@@ -269,4 +269,3 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."ERRORSTACK_PKG" AS
 	END pMain;
 END errorstack_pkg;
 /
-
