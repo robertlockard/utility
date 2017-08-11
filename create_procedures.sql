@@ -115,36 +115,37 @@ END generic_pkg;
 
 CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."GENERIC_PKG" as
 
-  function fgetinstance return varchar2 as
-  sInstanceName VARCHAR2(16);
-  iLog INTEGER;
-  begin
-    SELECT INSTANCE_NAME
+
+	function fgetinstance return varchar2 as
+	sInstanceName VARCHAR2(16);
+	iLog INTEGER;
+	begin
+	SELECT INSTANCE_NAME
 		INTO sInstanceName
 		FROM SYS.V_$INSTANCE;
-    RETURN sInstanceName;
+	RETURN sInstanceName;
 	EXCEPTION WHEN OTHERS THEN
 		utility.errorstack_pkg.pMain(pErrorId => iLog);
-    RETURN null;
-  END fgetinstance;
+	RETURN null;
+	END fgetinstance;
 
-  FUNCTION fReserved(pString IN VARCHAR2) RETURN boolean IS
-  iCnt INTEGER;
-  BEGIN
-    SELECT count(*)
-    INTO icnt
-    FROM sys.v_$reserved_words
-    WHERE instr(' ' || upper(pString) || ' ', ' ' || keyword || ' ') > 0;
-    IF iCnt > 0 THEN
-      RETURN TRUE;
-    ELSE 
-      RETURN FALSE;
-    END IF;
-  END fReserved;
+	FUNCTION fReserved(pString IN VARCHAR2) RETURN boolean IS
+	iCnt INTEGER;
+	BEGIN
+	SELECT count(*)
+	INTO icnt
+	FROM sys.v_$reserved_words
+	WHERE instr(' ' || upper(pString) || ' ', ' ' || keyword || ' ') > 0;
+	IF iCnt > 0 THEN
+	  RETURN TRUE;
+	ELSE 
+	  RETURN FALSE;
+	END IF;
+	END fReserved;
 	-- Turn debugging on and off. First off check to see if 
 	-- pUnit or pUser is not null. One or both off these need
 	-- to be populated.
-  PROCEDURE pDebugYN(pUnit IN VARCHAR2 DEFAULT NULL,
+	PROCEDURE pDebugYN(pUnit IN VARCHAR2 DEFAULT NULL,
 					 pUser IN VARCHAR2 DEFAULT NULL,
 					 pOn   IN VARCHAR2 DEFAULT 'Y') IS
 	BEGIN
