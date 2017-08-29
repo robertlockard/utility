@@ -2,7 +2,7 @@
 --  DDL for Package LOG_STACK
 --------------------------------------------------------
 
-CREATE OR REPLACE EDITIONABLE PACKAGE "UTILITY"."LOG_STACK" 
+CREATE OR REPLACE EDITIONABLE PACKAGE "error_log"."LOG_STACK" 
 authid definer AS
 
   function create_entry(pUnit  VARCHAR2 default null,
@@ -21,7 +21,7 @@ end;
 --  DDL for Package Body LOG_STACK
 --------------------------------------------------------
 
-CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."LOG_STACK" AS
+CREATE OR REPLACE EDITIONABLE PACKAGE BODY "error_log"."LOG_STACK" AS
  
 	-- this checks to see if we are dubugging. If we are 
 	-- then we can start logging.
@@ -32,7 +32,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."LOG_STACK" AS
 		-- check to see if we are debugging for a unit or a user.
 		select count(*)
 		into x
-		from utility.debug
+		from error_log.debug
 		where (unit = pUnit or unit = '*')
 		  and (username = pUser or username = '*');
 
@@ -52,12 +52,12 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."LOG_STACK" AS
 
 	begin
     -- check to see if debugging is turned on
-    if utility.log_stack.debug(pUnit => pUnit, pUser => user) > 0 then
+    if error_log.log_stack.debug(pUnit => pUnit, pUser => user) > 0 then
       -- if so, insert a row.
       -- grab the next id for the primary key.
       select errors.log_stack_seq.nextval into iId from dual;
 
-      insert into utility.app_log values (iId,
+      insert into error_log.app_log values (iId,
         			pUnit,
           			pLine,
             		user,
@@ -97,7 +97,7 @@ end;
 --  DDL for Package GENERIC_PKG
 --------------------------------------------------------
 
-CREATE OR REPLACE EDITIONABLE PACKAGE "UTILITY"."GENERIC_PKG" 
+CREATE OR REPLACE EDITIONABLE PACKAGE "error_log"."GENERIC_PKG" 
 AUTHID DEFINER
 as
   FUNCTION fgetinstance RETURN VARCHAR2;
@@ -113,7 +113,7 @@ END generic_pkg;
 --  DDL for Package Body GENERIC_PKG
 --------------------------------------------------------
 
-CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."GENERIC_PKG" as
+CREATE OR REPLACE EDITIONABLE PACKAGE BODY "error_log"."GENERIC_PKG" as
 
 
 	function fgetinstance return varchar2 as
@@ -125,7 +125,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."GENERIC_PKG" as
 		FROM SYS.V_$INSTANCE;
 	RETURN sInstanceName;
 	EXCEPTION WHEN OTHERS THEN
-		utility.errorstack_pkg.pMain(pErrorId => iLog);
+		error_log.errorstack_pkg.pMain(pErrorId => iLog);
 	RETURN null;
 	END fgetinstance;
 
@@ -160,7 +160,7 @@ END generic_pkg;
 --  DDL for Package ERRORSTACK_PKG
 --------------------------------------------------------
 
-CREATE OR REPLACE EDITIONABLE PACKAGE "UTILITY"."ERRORSTACK_PKG" 
+CREATE OR REPLACE EDITIONABLE PACKAGE "error_log"."ERRORSTACK_PKG" 
 AUTHID DEFINER
 AS
 	PROCEDURE pMain(pErrorId 	OUT INTEGER);
@@ -171,7 +171,7 @@ END errorstack_pkg;
 --  DDL for Package Body ERRORSTACK_PKG
 --------------------------------------------------------
 
-CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."ERRORSTACK_PKG" AS
+CREATE OR REPLACE EDITIONABLE PACKAGE BODY "error_log"."ERRORSTACK_PKG" AS
 
 	-- this procedure will get the stack values for each call in the stack.
 	-- we are not exposing this to the specification because it will only
@@ -187,7 +187,7 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."ERRORSTACK_PKG" AS
 
 	BEGIN
 		-- get the values from the stack that we are going to be 
-		-- putting into utility.error_lines.
+		-- putting into error_log.error_lines.
 		pOwner 			    := sys.utl_call_stack.owner(pDepth);
 		pLexical_Depth		:= sys.utl_call_stack.lexical_depth(pDepth);
 		pUnit_Line		  	:= sys.utl_call_stack.unit_line(pDepth);
@@ -229,10 +229,10 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."ERRORSTACK_PKG" AS
 			SELECT errors.error_lines_seq.nextval
 			INTO iLineId
 			FROM dual;
-			-- insert the line into utility.error_lines.
+			-- insert the line into error_log.error_lines.
 			INSERT INTO errors.error_lines VALUES (
 					iLineId,		-- primary key
-					pErrorId,		-- fk to utility.errors.
+					pErrorId,		-- fk to error_log.errors.
 					i,				-- dynamic_depth
 					sOwner,			-- pl/sql unit owner
 					sSubProgram,  	-- pl/sql unit and sub program 1st value.
@@ -253,8 +253,8 @@ CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UTILITY"."ERRORSTACK_PKG" AS
 		SELECT errors.errors_seq.nextval
 		INTO pErrorId
 		FROM dual;
-		-- create the base error in utility.errors table.
-		INSERT INTO errors.errors VALUES (pErrorId, -- utility.errors pk
+		-- create the base error in error_log.errors table.
+		INSERT INTO errors.errors VALUES (pErrorId, -- error_log.errors pk
 							sys_context('userenv', 'session_user'),
 							sys_context('userenv', 'ip_address'),
 							current_timestamp

@@ -1,24 +1,24 @@
 -- create users and privileges
 
-create user utility identified by x;
-create role utility_admin_role identified by x;
+create user ERROR_LOG identified by x;
+create role error_log_admin_role identified by x;
 
 -- in order to build the required objects,
 -- the user needs create procedure and create table.
 grant 
 	create procedure, 
 	create table 
-to utility_admin_role;
+to error_log_admin_role;
 
--- by default we are granting create session to utility.
+-- by default we are granting create session to error_log.
 -- once we are done, we are going to lock and expire the
 -- account with a lock script. the only time anyone should
--- be connecting to the utility schema, is to do maintenance
+-- be connecting to the error_log schema, is to do maintenance
 -- on the schema.
 grant 
 	create session, 
-	utility_admin_role 
-to utility;
+	error_log_admin_role 
+to error_log;
 
 -- the packages depend on these objects. to get
 -- the packages to compile, we need to grant the
@@ -27,7 +27,7 @@ grant
 	execute on sys.utl_call_stack,
 	select on SYS.V_$INSTANCE,
 	select on sys.v_$reserved_words
-to utility;
+to error_log;
 
 -- the sys_select_role is going to be granted to 
 -- the packages. it needs access to the following 
@@ -39,14 +39,14 @@ grant
 to sys_select_role;
 
 -- we are granting with the delegate option so
--- the utility schema can grant the the role
+-- the error_log schema can grant the the role
 -- to the packages.
 grant 
 	sys_select_role
-to utility with delegate option;
+to error_log with delegate option;
 
--- the utility user should not have anyone
--- privileges when connecting. the utility
--- user is required to set the utility_admin_role
+-- the error_log user should not have anyone
+-- privileges when connecting. the error_log
+-- user is required to set the error_log_admin_role
 -- with a password to do any maintenance.
-alter user utility default role none;
+alter user error_log default role none;
